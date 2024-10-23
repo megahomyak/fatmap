@@ -17,11 +17,11 @@ if action == "send":
             self_message_count = str(int(f.read()) + 1)
     except FileNotFoundError:
         self_message_count = "1"
-    requests.post(f"{api_url}/modify", json={
+    assert requests.post(f"{api_url}/modify", json={
         "auth": api_key,
         "key": f"messages/{username}-{self_message_count}",
         "value": f"{username}: {message}",
-    })
+    }).status_code == 200
     with open("self_message_counter", "w") as f:
         f.write(self_message_count)
     print("sent")

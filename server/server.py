@@ -65,7 +65,7 @@ async def get_value(request):
 
 @handle("/modify")
 async def modify(request):
-    last_layer_number = add_layer(request)
+    last_layer_number = add_layer({"key": request["key"], "value": request["value"]})
     return json.dumps({
         "layer_number": last_layer_number,
         "old_value": _get_value(request["key"]),
