@@ -4,6 +4,8 @@ import json
 
 LAYERS_DIR_NAME = "layers"
 
+api_key = os.environ["API_KEY"]
+
 try: os.mkdir(LAYERS_DIR_NAME)
 except: pass
 
@@ -16,18 +18,24 @@ def add_layer(contents):
     else:
         last_layer_number = str(int(last_layer_number) + 1)
     with open(os.path.join(LAYERS_DIR_NAME, last_layer_number), "w") as f:
-        f.write(contents)
+        f.write(json.dumps(contents))
     with open("last_layer_number", "w") as f:
         f.write(last_layer_number)
     return last_layer_number
 
 fastapi_app = fastapi.FastAPI()
 def handle(url):
-    return fastapi_app.post(url, response_class=fastapi.responses.PlainTextResponse)
+    def wrapper(function):
+        @fastapi_app.post(url, response_class=fastapi.responses.PlainTextResponse)
+        async def receiver(request: fastapi.Request):
+            request = await request.json()
+            if request["auth"] == api_key:
+                return await function(request)
+            raise Exception("Bad credentials")
+    return wrapper
 
 @handle("/get_layer")
-async def get_layer(request: fastapi.Request):
-    request = await request.json()
+async def get_layer(request):
     layer_number = request["layer_number"]
     try:
         with open(os.path.join(LAYERS_DIR_NAME, layer_number)) as f:
@@ -37,7 +45,6 @@ async def get_layer(request: fastapi.Request):
     return layer
 
 def _get_value(key):
-    key = request["key"]
     try:
         with open("last_layer_number") as f:
             last_layer_number = f.read()
@@ -53,13 +60,11 @@ def _get_value(key):
     return None
 
 @handle("/get_value")
-async def get_value(request: fastapi.Request):
-    request = await request.json()
+async def get_value(request):
     return json.dumps(_get_value(request["key"]))
 
 @handle("/modify")
-async def modify(request: fastapi.Request):
-    request = (await request.body()).decode("utf-8")
+async def modify(request):
     last_layer_number = add_layer(request)
     return json.dumps({
         "layer_number": last_layer_number,

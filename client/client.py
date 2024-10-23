@@ -1,7 +1,12 @@
 import sys
 import requests
 
-api_url = "http://127.0.0.1:8008"
+def read(file_name):
+    with open(file_name) as f:
+        return f.read().strip()
+
+api_url = read("api_url.txt")
+api_key = read("api_key.txt")
 
 action = sys.argv[1]
 if action == "send":
@@ -13,6 +18,7 @@ if action == "send":
     except FileNotFoundError:
         self_message_count = "1"
     requests.post(f"{api_url}/modify", json={
+        "auth": api_key,
         "key": f"messages/{username}-{self_message_count}",
         "value": f"{username}: {message}",
     })
@@ -28,6 +34,7 @@ elif action == "poll":
         except FileNotFoundError:
             query_layer_number = "1"
         response = requests.post(f"{api_url}/get_layer", json={
+            "auth": api_key,
             "layer_number": query_layer_number,
         }).json()
         if response is None:
