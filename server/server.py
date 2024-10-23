@@ -30,6 +30,7 @@ def handle(url):
         async def receiver(request: fastapi.Request):
             request = await request.json()
             if request["auth"] == api_key:
+                request.pop("auth")
                 return await function(request)
             raise Exception("Bad credentials")
     return wrapper
@@ -65,7 +66,7 @@ async def get_value(request):
 
 @handle("/modify")
 async def modify(request):
-    last_layer_number = add_layer({"key": request["key"], "value": request["value"]})
+    last_layer_number = add_layer(request)
     return json.dumps({
         "layer_number": last_layer_number,
         "old_value": _get_value(request["key"]),
